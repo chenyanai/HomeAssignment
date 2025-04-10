@@ -1,14 +1,16 @@
-import string
+import string # Not being used
 import numpy as np
 import pandas as pd
-from tqdm import tqdm
+from tqdm import tqdm # Not being used
 from matplotlib import pyplot as plt
-import seaborn as sns
+import seaborn as sns # Not being used
 from sklearn.model_selection import KFold, train_test_split
 from sklearn import metrics
-from sklearn.preprocessing import QuantileTransformer
-from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.preprocessing import QuantileTransformer # Not being used
+from sklearn.base import BaseEstimator, TransformerMixin # Not being used
 import xgboost as xgb
+
+# We should not import packages that we are not using, as they might enforce limitations without contributing to the code
 
 full_df = pd.read_csv('listings_dataset.csv', index_col=0)
 
@@ -103,6 +105,7 @@ for col in categorical_columns:
     full_df[col] = rare_cats_to_other(full_df[col])
     full_df[col].fillna('other', inplace=True)
 
+# For some columns missing value might be very different than 0
 for col in numeric_columns:
     full_df[col].fillna(0, inplace=True)
 
@@ -123,6 +126,7 @@ def add_gig_features(df):
 
 full_df = add_gig_features(full_df)
 
+# This is obselete as we split the data again in each fold, we need to keep this train and test sets constant 
 x_train, x_test, y_train, y_test = train_test_split(full_df.drop('is_click', axis=1), full_df['is_click'], test_size=0.2)
 x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=0.2)
 
@@ -218,5 +222,40 @@ is_click
 1     4378
 Name: count, dtype: int64
 Selection deleted
+
+Inspecting the feature importance values:
+created_at                         0.248419
+gig_title                          0.175327
+user_reg_date                      0.128004
+listing_id                         0.109703
+search_query                       0.090136
+previous_order_date                0.077877
+is_seller_onlie                    0.022046
+position                           0.018523
+gig_price                          0.016086
+avg_position_shown_last_60d        0.012011
+cnt_helpful_reviews_last_year      0.011131
+gig_avg_rating                     0.010690
+gig_rated_orders                   0.010098
+gig_id                             0.009925
+previous_order_sc_id               0.009653
+position_diff_from_avg             0.009621
+price_change_from_last_purchase    0.008512
+avg_review_length_last_3_months    0.008483
+imp_badge                          0.007636
+previous_order_amount              0.002940
+gig_sc_id                          0.002553
+user_timezone                      0.002356
+is_user_buyer                      0.002274
+operating_system                   0.002253
+is_same_sc_as_last_purchase        0.001958
+is_filtered                        0.001786
+context                            0.000000
+dtype: float32
+
+I can notice that features such as 'gig_title', 'listing_id', 'search_query' and 'created_at' which are very specific and should not
+be part of the training (the texts must be converted to some kind of embedding represenation for xgboost to use them) have the highest values.
+Therefore, I can determine that the model does not learn enough.
+
 
 """
